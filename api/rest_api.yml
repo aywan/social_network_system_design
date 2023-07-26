@@ -1,0 +1,686 @@
+openapi: 3.0.3
+
+info:
+  title: social-network-api
+  version: 0.1.0
+
+tags:
+  - name: user
+    description: Взаимодействие пользователей
+  - name: post
+    description: Управление постами
+  - name: chat
+    description: Работа с сообщениями
+  - name: utils
+    description: Утилиты
+
+paths:
+
+  /api/v1/user/{userId}/profile:
+    parameters:
+      - name: userId
+        in: path
+        description: идентификатор пользователя
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      description: Просмотр анкеты пользователя.
+      tags: ["user"]
+      security:
+        - jwtBearer: []
+
+      responses:
+        "200":
+          description: Данные анкеты пользователя.
+          content:
+            "application/json":
+              schema:
+                type: object
+                properties:
+                  profile:
+                    $ref: "#/components/schemas/UserProfile"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+
+
+  /api/v1/user/{userId}/friends:
+    parameters:
+      - name: userId
+        in: path
+        description: идентификатор пользователя
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      description: Просмотр друзей пользователя.
+      tags: ["user"]
+      security:
+        - jwtBearer: []
+
+      parameters:
+        - name: offset
+          in: query
+          schema:
+            type: integer
+
+        - name: limit
+          in: query
+          schema:
+            type: integer
+
+        - name: orderBy
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+
+      responses:
+        "200":
+          description: Получение списка друзей пользователя.
+          content:
+            "application/json":
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/UserProfile"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+
+  /api/v1/user/{userId}/friend/add:
+    parameters:
+      - name: userId
+        in: path
+        description: идентификатор пользователя
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    post:
+      description: Добавить пользователя в друзья.
+      tags: ["user"]
+      security:
+        - jwtBearer: []
+
+      responses:
+        "200":
+          $ref: "#/components/responses/SuccessResponse"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+
+  /api/v1/user/{userId}/friend/remove:
+    parameters:
+      - name: userId
+        in: path
+        description: идентификатор пользователя
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    post:
+      description: Убрать пользователя из друзей.
+      tags: ["user"]
+      security:
+        - jwtBearer: []
+
+      responses:
+        "200":
+          $ref: "#/components/responses/SuccessResponse"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+
+  /api/v1/post:
+    get:
+      description: просмотр списка постов.
+      tags: ["post"]
+      security:
+        - jwtBearer: []
+
+      parameters:
+        - name: userId
+          in: query
+          description: параметр для фильтрации ленты пользователя
+          schema:
+            type: string
+            format: uuid
+
+        - name: offset
+          in: query
+          schema:
+            type: integer
+
+        - name: limit
+          in: query
+          schema:
+            type: integer
+
+        - name: orderBy
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+
+      responses:
+        "200":
+          description: Список постов
+          content:
+            "application/json":
+              schema:
+                type: object
+                additionalProperties: false
+                required: ["post"]
+                properties:
+                  post:
+                    description: Список записей.
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Post"
+                  user:
+                    description: Список авторов записей.
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/UserProfile"
+
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+
+    post:
+      description: Публикация поста
+      tags: ["post"]
+      security:
+        - jwtBearer: []
+
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                post:
+                  type: object
+                  additionalProperties: false
+                  properties:
+                    title:
+                      description: Заголовок записи.
+                      type: string
+                    content:
+                      description: Содержимео записи.
+                      type: string
+                    attachement:
+                      description: Прикрепленные файлы.
+                      type: array
+                      items:
+                        $ref: "#/components/schemas/File"
+
+      responses:
+        "200":
+          description: Успешное создание записи.
+          content:
+            "application/json":
+              schema:
+                type: object
+                properties:
+                  post:
+                    $ref: "#/components/schemas/Post"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
+
+  /api/v1/chat:
+    get:
+      description: получение списка диалогов и чатов
+      tags: ["chat"]
+      security:
+        - jwtBearer: []
+
+      parameters:
+        - name: offset
+          in: query
+          schema:
+            type: integer
+
+        - name: limit
+          in: query
+          schema:
+            type: integer
+
+        - name: orderBy
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+
+      responses:
+        "200":
+          description: x
+          content:
+            "application/json":
+              schema:
+                type: object
+                additionalProperties: false
+                required: ["chat"]
+                properties:
+                  chat:
+                    description: Список чатов.
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Chat"
+
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
+
+    post:
+      description: Создание нового диалога/чат комнаты.
+      tags: ["chat"]
+      security:
+        - jwtBearer: []
+
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              type: object
+              additionalProperties: false
+              required: ["chat"]
+              properties:
+                chat:
+                  type: object
+                  additionalProperties: false
+                  required: ["title", "participantsId"]
+                  properties:
+                    title:
+                      description: Название комнаты.
+                      type: string
+                    participantsId:
+                      type: array
+                      items:
+                        type: string
+                        format: uuid
+
+      responses:
+        "200":
+          description: x
+          content:
+            "application/json":
+              schema:
+                type: object
+                additionalProperties: false
+                required: ["chat", "participants"]
+                properties:
+                  chat:
+                    $ref: "#/components/schemas/Chat"
+                  participants:
+                    description: Список участников.
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/UserProfile"
+
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
+
+  /api/v1/chat/{chatId}:
+    parameters:
+      - name: chatId
+        in: path
+        description: идентификатор диалога
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      description: получение информации о чате.
+      tags: ["chat"]
+      security:
+        - jwtBearer: []
+
+      responses:
+        "200":
+          description: Иформация о чате.
+          content:
+            "application/json":
+              schema:
+                type: object
+                additionalProperties: false
+                required: ["chat", "participants"]
+                properties:
+                  chat:
+                    $ref: "#/components/schemas/Chat"
+                  participants:
+                    description: Список участников.
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/UserProfile"
+
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+
+  /api/v1/chat/{chatId}/messages:
+    parameters:
+      - name: chatId
+        in: path
+        description: идентификатор диалога
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      description: получение сообщейни в чате.
+      tags: ["chat"]
+      security:
+        - jwtBearer: []
+
+      parameters:
+        - name: offset
+          in: query
+          schema:
+            type: integer
+
+        - name: limit
+          in: query
+          schema:
+            type: integer
+
+      responses:
+        "200":
+          description: Список записей
+          content:
+            "application/json":
+              schema:
+                type: object
+                additionalProperties: false
+                required: ["message", "user"]
+                properties:
+                  message:
+                    description: Список сообщений.
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ChatMessage"
+                  user:
+                    description: Список авторов сообщений.
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/UserProfile"
+
+    post:
+      description: публикация нового сообщения в чат.
+      tags: ["chat"]
+      security:
+        - jwtBearer: []
+
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              type: object
+              additionalProperties: false
+              required: ["message"]
+              properties:
+                message:
+                  type: object
+                  additionalProperties: false
+                  required: ["content"]
+                  properties:
+                    content:
+                      description: Содержимео записи.
+                      type: string
+                    attachement:
+                      description: Прикрепленные файлы.
+                      type: array
+                      items:
+                        $ref: "#/components/schemas/File"
+
+      responses:
+        "200":
+          $ref: "#/components/responses/SuccessResponse"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+
+
+  /api/v1/upload:
+    post:
+      description: Загрузка временных файлов для постов.
+      tags: ["utils"]
+
+      requestBody:
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+
+      responses:
+        "200":
+          description: Файл загружен.
+          content:
+            "application/json":
+              schema:
+                type: object
+                properties:
+                  file:
+                    $ref: "#/components/schemas/File"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+
+components:
+  schemas:
+
+    UserProfile:
+      description: Профиль пользователя.
+      type: object
+      additionalProperties: false
+      required: ["id", "firstName", "lastName"]
+      properties:
+        id:
+          description: Идентификатор пользователя.
+          type: string
+          format: uuid
+        firstName:
+          description: Имя
+          type: string
+        lastName:
+          description: Фамилия
+          type: string
+        secondName:
+          description: Отчество
+          type: string
+
+    Post:
+      description: Запись ленты.
+      type: object
+      additionalProperties: false
+      required: ["id", "title", "content", "createAt", "creatorId"]
+      properties:
+        id:
+          description: Идентификатор записи.
+          type: string
+          format: uuid
+        creatorId:
+          description: Идентификатор пользователя создавшего запись.
+          type: string
+          format: uuid
+        createAt:
+          description: Двта создания записи.
+          type: string
+          format: date-time
+        title:
+          description: Заголовок записи.
+          type: string
+        content:
+          description: Содержимео записи.
+          type: string
+        attachement:
+          description: Прикрепленные файлы.
+          type: array
+          items:
+            $ref: "#/components/schemas/File"
+
+    File:
+      description: Файл.
+      type: object
+      additionalProperties: false
+      required: ["id", "fileName", "url", "mime"]
+      properties:
+        id:
+          description: Идентификатор файла.
+          type: string
+          format: uuid
+        fileName:
+          description: Имя файла.
+          type: string
+        url:
+          description: Ссылка на файл.
+          type: string
+          format: uri
+        mime:
+          description: Mime-type файла.
+          type: string
+        status:
+          description: Статус файла.
+          type: string
+          enum: ["temp", "persisted"]
+
+    Chat:
+      description: Чат комната
+      type: object
+      additionalProperties: false
+      required: ["id", "title"]
+      properties:
+        id:
+          description: Идентификатор комнаты.
+          type: string
+          format: uuid
+        title:
+          description: Название комнаты.
+          type: string
+        participanCount:
+          description: Число участников
+          type: integer
+          format: int64
+        hasNewMessages:
+          description: Флаг наличия непрочитанных сообщений.
+          type: boolean
+
+    ChatMessage:
+      description: Запись чата.
+      type: object
+      additionalProperties: false
+      required: ["id", "content", "createAt", "creatorId"]
+      properties:
+        id:
+          description: Идентификатор записи.
+          type: string
+          format: uuid
+        creatorId:
+          description: Идентификатор пользователя создавшего запись.
+          type: string
+          format: uuid
+        createAt:
+          description: Двта создания сообщения.
+          type: string
+          format: date-time
+        content:
+          description: Содержимео сообщения.
+          type: string
+        attachement:
+          description: Прикрепленные файлы.
+          type: array
+          items:
+            $ref: "#/components/schemas/File"
+
+  responses:
+
+    ErrorResponse:
+      description: Ответ с ошибкой.
+      content:
+        "application/json":
+          schema:
+            type: object
+            required: ["code", "message"]
+            properties:
+              code:
+                description: Код ошибки.
+                type: integer
+                format: int64
+              message:
+                description: Описание ошибки.
+                type: string
+
+    SuccessResponse:
+      description: Ответ об успешнои действии.
+      content:
+        "application/json":
+          schema:
+            type: object
+            required: ["code", "message"]
+            properties:
+              code:
+                description: Код ответа.
+                type: integer
+                format: int64
+              message:
+                description: Описание ответа.
+                type: string
+
+  securitySchemes:
+    jwtBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

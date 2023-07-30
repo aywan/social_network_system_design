@@ -1,0 +1,130 @@
+// ---
+// - анкеты людей (имя, описание, фото, город, интересы);
+Table user {
+  id UUID [primary key]
+  first_name text [not null]
+  last_name text [not null]
+  second_name text
+  bio text
+  photo_id UUID [ref: > file.id]
+  location_id UUID [ref: > dict_locations.id]
+  interest json [default: "[]", note: "в ввиде массива идентефикаторов из dict_interest", ref: <> dict_interest.name]
+
+  Note: "Хранение анкеты пользователя"
+}
+
+// - отношения (*друзья, подписчики, любовные отношения*);
+Table user_relation {
+  user_id UUID [not null, ref: > user.id]
+  relate_to UUID [not null, ref: > user.id]
+  relate_as text [not null]
+
+  indexes {
+    (user_id, relate_to, relate_as) [pk]
+    (user_id, relate_as)
+    (relate_to, relate_as)
+  }
+
+  Note: "Пока в RDBMS, возможно стоит уехать в графы"
+}
+
+Table dict_interest {
+  name text [primary key]
+  description text [not null]
+}
+
+Table dict_locations {
+  id UUID [primary key]
+  name text [not null]
+  parent UUID
+
+  Note: "Тут нужно понять кейс использования, иерархичность, вероятно графы+osm+dadata"
+}
+
+// ---
+// - посты (*описание, медиа, хэштеги, лайки, просмотры, комментарии*);
+Table post {
+  id UUID [primary key]
+  creator_id UUID [not null, ref: > user.id]
+  create_at timestamp(6) [not null, default:"now()"]
+  title text [not null]
+  content text [not null]
+  attachments json [default:"[]", note: "массив вложений"]
+  tags JSON [default: "[]", note: "массив тегов"]
+}
+
+Table post_attachments {
+  file_id UUID [ref: > file.id]
+  title text
+  url text
+  mime text
+  Note: "Пример списка объектов json"
+}
+
+Table post_stats {
+  id UUID [primary key, ref: - post.id]
+  view_count integer [not null, default: 0]
+  like_count integer [not null, default: 0]
+
+  Note: "отдельная таблица со статистикой, так как будет часто обновлятся"
+}
+
+Table post_comment {
+  id UUID [primary key]
+  creator_id UUID [not null, ref: > post.id]
+  create_at timestamp [not null, default:"now()"]
+  content text
+}
+
+// ---
+// - личные сообщения и чаты (*только текст и прочитанность сообщений*);
+Table chat {
+  id UUID [primary key]
+  title text
+}
+
+Table chat_stat {
+  id UUID [primary key, ref: - chat.id]
+  last_message_ts timestamp(6) [not null]
+  last_message JSON [note: "последнее сообщение"]
+  Note: "Cache, информация об оперативном состоянии чата"
+}
+
+Table chat_post {
+  id UUID [primary key]
+  chat_id UUID [not null, ref: > chat.id]
+  content text
+  creator_id UUID [not null, ref: > user.id]
+  create_at timestamp(6) [not null, default:"now()"]
+}
+
+Table chat_user {
+  chat_id UUID [not null, ref: > chat.id]
+  user_id UUID [not null, ref: > user.id]
+
+  last_view_at timestamp [not null, note: "ts для определения откуда считать последнее прочитанное сообщение"]
+
+  indexes {
+    (chat_id, user_id) [pk]
+  }
+}
+
+// ---
+// - медиа (*фото, аудио, видео*).
+Table file {
+  id UUID [primary key]
+  status text [not null, default: "temp"]
+  creator_id UUID [ref: > user.id]
+
+  title text [not null, note: "имя файла для пользвателя"]
+  mime text [not null]
+
+  store_uri text [note: "идентификатор физического хранения файла"]
+  download_uri text [note: "публичная ссылка на файл"]
+  thumbnail_uri text [note: "публичная ссылка на предпросмотр файла"]
+
+  relation_type text [note: "тип сущности к которой относится файл, например post"]
+  relation_id text [note: "идентификатор сущности к которой относится файл"]
+
+  Note: "Униваерсальная таблица для хранения ссылок на файлы, relation_* указывается для сохранения обратной ссылки на использование"
+}
